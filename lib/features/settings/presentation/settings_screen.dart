@@ -10,8 +10,33 @@ import 'package:college_pulse/features/context_engine/context_provider.dart';
 import 'package:college_pulse/features/tasks/providers/task_provider.dart';
 import 'package:college_pulse/features/timetable/providers/timetable_provider.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  String _selectedSound = 'default';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSelectedSound();
+  }
+
+  Future<void> _loadSelectedSound() async {
+    final sound = await NotificationService().getSelectedSound();
+    if (mounted) {
+      setState(() => _selectedSound = sound);
+    }
+  }
+
+  Future<void> _changeSound(String soundKey) async {
+    await NotificationService().setSelectedSound(soundKey);
+    setState(() => _selectedSound = soundKey);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,18 +125,107 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // 3. Notifications Section
+          // 3. Notifications & Sound Selection Section
           _buildSectionHeader(context, l10n.notificationsSection, Icons.notifications_active_outlined),
           Card(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.music_note_rounded, size: 20, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.notificationSound,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+                RadioListTile<String>(
+                  title: Text(l10n.soundDefault),
+                  subtitle: Text(l10n.isArabic ? 'صوت النظام القياسي للإشعارات' : 'Standard system alert sound'),
+                  value: 'default',
+                  groupValue: _selectedSound,
+                  activeColor: AppColors.primary,
+                  secondary: IconButton(
+                    icon: const Icon(Icons.volume_up_rounded, color: AppColors.primary),
+                    tooltip: l10n.playPreview,
+                    onPressed: () async {
+                      await NotificationService().showTestNotification(
+                        isArabic: l10n.isArabic,
+                        soundOverride: 'default',
+                      );
+                    },
+                  ),
+                  onChanged: (val) {
+                    if (val != null) _changeSound(val);
+                  },
+                ),
+                const Divider(height: 1),
+                RadioListTile<String>(
+                  title: Text(l10n.soundUrgent),
+                  subtitle: Text(l10n.isArabic ? 'صوت قوي مع اهتزاز مستمر' : 'High priority tone with vibration'),
+                  value: 'urgent',
+                  groupValue: _selectedSound,
+                  activeColor: AppColors.urgent,
+                  secondary: IconButton(
+                    icon: const Icon(Icons.volume_up_rounded, color: AppColors.urgent),
+                    tooltip: l10n.playPreview,
+                    onPressed: () async {
+                      await NotificationService().showTestNotification(
+                        isArabic: l10n.isArabic,
+                        soundOverride: 'urgent',
+                      );
+                    },
+                  ),
+                  onChanged: (val) {
+                    if (val != null) _changeSound(val);
+                  },
+                ),
+                const Divider(height: 1),
+                RadioListTile<String>(
+                  title: Text(l10n.soundChime),
+                  subtitle: Text(l10n.isArabic ? 'نغمة جرس هادئة' : 'Soft bell chime'),
+                  value: 'chime',
+                  groupValue: _selectedSound,
+                  activeColor: AppColors.secondary,
+                  secondary: IconButton(
+                    icon: const Icon(Icons.volume_up_rounded, color: AppColors.secondary),
+                    tooltip: l10n.playPreview,
+                    onPressed: () async {
+                      await NotificationService().showTestNotification(
+                        isArabic: l10n.isArabic,
+                        soundOverride: 'chime',
+                      );
+                    },
+                  ),
+                  onChanged: (val) {
+                    if (val != null) _changeSound(val);
+                  },
+                ),
+                const Divider(height: 1),
+                RadioListTile<String>(
+                  title: Text(l10n.soundSilent),
+                  subtitle: Text(l10n.isArabic ? 'اهتزاز لطيف بدون صوت مسموع' : 'Gentle vibration without audible sound'),
+                  value: 'silent',
+                  groupValue: _selectedSound,
+                  activeColor: Colors.grey,
+                  secondary: const Icon(Icons.vibration_rounded, color: Colors.grey),
+                  onChanged: (val) {
+                    if (val != null) _changeSound(val);
+                  },
+                ),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.alarm_on_rounded, color: AppColors.primary),
                   title: Text(l10n.testNotification),
                   subtitle: Text(
                     l10n.isArabic
-                        ? 'إرسال إشعار تجريبي لاختبار قناة التنبيهات المسبقة'
-                        : 'Trigger sample notification to verify alarm channel',
+                        ? 'إرسال إشعار تجريبي بالصوت المختار'
+                        : 'Trigger sample notification with selected sound',
                     style: const TextStyle(fontSize: 12),
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -312,5 +426,3 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
-
-

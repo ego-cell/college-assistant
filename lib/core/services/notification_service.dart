@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import '../constants/app_constants.dart';
@@ -9,6 +10,8 @@ class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
+
+  static const String keyNotificationSound = 'pref_notification_sound';
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -43,25 +46,43 @@ class NotificationService {
         },
       );
 
-      // Create high-importance Android notification channel
-      const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        AppConstants.notificationChannelId,
-        AppConstants.notificationChannelName,
-        description: AppConstants.notificationChannelDescription,
-        importance: Importance.max,
-        enableVibration: true,
-        playSound: true,
-      );
-
-      await _notificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(channel);
+      // Create primary notification channel
+      await _setupNotificationChannels();
 
       _isInitialized = true;
     } catch (e) {
       debugPrint('Error initializing notification service: $e');
     }
+  }
+
+  Future<void> _setupNotificationChannels() async {
+    final sound = await getSelectedSound();
+    final playSound = sound != 'silent';
+
+    final AndroidNotificationChannel channel = AndroidNotificationChannel(
+      AppConstants.notificationChannelId,
+      AppConstants.notificationChannelName,
+      description: AppConstants.notificationChannelDescription,
+      importance: sound == 'silent' ? Importance.low : Importance.max,
+      enableVibration: true,
+      playSound: playSound,
+    );
+
+    await _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+  }
+
+  Future<String> getSelectedSound() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyNotificationSound) ?? 'default';
+  }
+
+  Future<void> setSelectedSound(String soundKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyNotificationSound, soundKey);
+    await _setupNotificationChannels();
   }
 
   Future<void> requestPermissions() async {
@@ -87,6 +108,8 @@ class NotificationService {
     if (task.isCompleted || task.isArchived || task.isOverdue) return;
 
     final now = DateTime.now();
+    final sound = await getSelectedSound();
+    final playSound = sound != 'silent';
 
     for (int offsetMinutes in task.reminderOffsetsInMinutes) {
       final triggerTime = task.dueDate.subtract(Duration(minutes: offsetMinutes));
@@ -104,15 +127,17 @@ class NotificationService {
             title,
             body,
             tz.TZDateTime.from(triggerTime, tz.local),
-            const NotificationDetails(
+            NotificationDetails(
               android: AndroidNotificationDetails(
                 AppConstants.notificationChannelId,
                 AppConstants.notificationChannelName,
                 channelDescription: AppConstants.notificationChannelDescription,
-                importance: Importance.max,
-                priority: Priority.high,
+                importance: sound == 'silent' ? Importance.low : Importance.max,
+                priority: sound == 'silent' ? Priority.low : Priority.high,
+                playSound: playSound,
+                enableVibration: true,
                 showWhen: true,
-                styleInformation: BigTextStyleInformation(''),
+                styleInformation: const BigTextStyleInformation(''),
               ),
             ),
             androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -131,7 +156,6 @@ class NotificationService {
   Future<void> cancelTaskNotifications(String taskId) async {
     if (!_isInitialized) return;
     try {
-      // Possible reminder offsets
       const offsets = [
         AppConstants.reminder48h,
         AppConstants.reminder24h,
@@ -145,28 +169,33 @@ class NotificationService {
     }
   }
 
-  /// Shows an immediate test notification to verify channel and permissions
-  Future<void> showTestNotification({bool isArabic = true}) async {
+  /// Shows an immediate test notification with the chosen sound configuration
+  Future<void> showTestNotification({bool isArabic = true, String? soundOverride}) async {
     if (!_isInitialized) await init();
 
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      final sound = soundOverride ?? await getSelectedSound();
+      final playSound = sound != 'silent';
+
+      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         AppConstants.notificationChannelId,
         AppConstants.notificationChannelName,
         channelDescription: AppConstants.notificationChannelDescription,
-        importance: Importance.max,
-        priority: Priority.high,
+        importance: sound == 'silent' ? Importance.low : Importance.max,
+        priority: sound == 'silent' ? Priority.low : Priority.high,
+        playSound: playSound,
+        enableVibration: true,
         ticker: 'College Pulse Test',
       );
 
-      const NotificationDetails details = NotificationDetails(android: androidDetails);
+      final NotificationDetails details = NotificationDetails(android: androidDetails);
 
       await _notificationsPlugin.show(
         99999,
-        isArabic ? '🎓 رفيق الكلية الذكي جاهز!' : '🎓 College Pulse is Ready!',
+        isArabic ? '🎓 رفيق الكلية: تجربة الصوت' : '🎓 College Pulse: Sound Test',
         isArabic
-            ? 'نظام التنبيهات يعمل بدقة لتذكيرك بمواعيد الكويزات والشيتات والمشاريع.'
-            : 'Alert engine is active to notify you before quizzes and submissions.',
+            ? 'تم تطبيق نغمة التنبيه بنجاح. ستصلك التذكيرات بهذا الصوت!'
+            : 'Alert sound applied successfully. You will receive notifications with this tone!',
         details,
       );
     } catch (e) {
@@ -175,8 +204,6 @@ class NotificationService {
   }
 
   int _generateNotificationId(String taskId, int offset) {
-    // Generate unique positive 31-bit integer hash from task ID and offset
     return (taskId.hashCode ^ offset).abs() % 2147483647;
   }
 }
-

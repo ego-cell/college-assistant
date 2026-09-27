@@ -154,6 +154,12 @@ class AppLocalizations {
   String get themeLight => isArabic ? 'فاتح' : 'Light Mode';
   String get themeDark => isArabic ? 'داكن' : 'Dark Mode';
   String get notificationsSection => isArabic ? 'التنبيهات' : 'Notifications';
+  String get notificationSound => isArabic ? 'نغمة وصوت التنبيه' : 'Alert Sound';
+  String get soundDefault => isArabic ? 'نغمة النظام الافتراضية' : 'Default System Tone';
+  String get soundUrgent => isArabic ? 'نغمة عاجلة (كويزات وتسليمات)' : 'Urgent Alert (Quizzes & Deadlines)';
+  String get soundChime => isArabic ? 'رنين هادئ للتذكير' : 'Gentle Chime';
+  String get soundSilent => isArabic ? 'اهتزاز فقط (صامت)' : 'Vibrate Only (Silent)';
+  String get playPreview => isArabic ? 'تجربة النغمة' : 'Test Tone';
   String get testNotification => isArabic ? 'إرسال تنبيه تجريبي' : 'Send Test Notification';
   String get testNotificationSent => isArabic ? 'تم إرسال التنبيه التجريبي!' : 'Test notification sent!';
   String get dataManagementSection => isArabic ? 'إدارة البيانات' : 'Data Management';
