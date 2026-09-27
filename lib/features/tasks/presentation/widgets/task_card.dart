@@ -3,6 +3,7 @@ import 'package:college_pulse/core/constants/app_colors.dart';
 import 'package:college_pulse/core/localization/app_localizations.dart';
 import 'package:college_pulse/features/tasks/models/task_category.dart';
 import 'package:college_pulse/features/tasks/models/task_item.dart';
+import 'package:college_pulse/features/timetable/models/slot_type.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskItem task;
@@ -83,7 +84,7 @@ class TaskCard extends StatelessWidget {
                     ),
                   ),
 
-                  // Course Name Tag
+                  // Course Name & Slot Type Tag (محاضرة / سكشن / معمل)
                   if (task.courseName != null && task.courseName!.isNotEmpty) ...[
                     const SizedBox(width: 8),
                     Flexible(
@@ -93,15 +94,35 @@ class TaskCard extends StatelessWidget {
                           color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          task.courseName!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (task.slotType != null) ...[
+                              Icon(task.slotType!.icon, size: 12, color: task.slotType!.color),
+                              const SizedBox(width: 4),
+                              Text(
+                                task.slotType!.localizedName(context),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: task.slotType!.color,
+                                ),
+                              ),
+                              const Text(' • ', style: TextStyle(fontSize: 10)),
+                            ],
+                            Flexible(
+                              child: Text(
+                                task.courseName!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

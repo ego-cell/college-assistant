@@ -183,6 +183,7 @@ class _QuickAddTaskSheetState extends State<QuickAddTaskSheet> {
       id: const Uuid().v4(),
       courseId: isPersonal ? null : _selectedSlot?.id,
       courseName: isPersonal ? null : _selectedSlot?.courseName,
+      slotType: isPersonal ? null : _selectedSlot?.slotType,
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim().isEmpty
           ? null
@@ -212,14 +213,7 @@ class _QuickAddTaskSheetState extends State<QuickAddTaskSheet> {
     final isArabic = l10n.isArabic;
     final isDark = theme.brightness == Brightness.dark;
 
-    // Unique courses from available slots
-    final coursesMap = <String, CourseSlot>{};
-    for (final s in widget.availableSlots) {
-      if (!coursesMap.containsKey(s.courseName)) {
-        coursesMap[s.courseName] = s;
-      }
-    }
-    final courseSlotsList = coursesMap.values.toList();
+    final slotsMap = {for (var s in widget.availableSlots) s.id: s};
 
     return Container(
       constraints: BoxConstraints(
@@ -322,13 +316,42 @@ class _QuickAddTaskSheetState extends State<QuickAddTaskSheet> {
 
               // Target Subject Selector (only if not Personal Task)
               if (_selectedCategory != TaskCategory.personal) ...[
-                Text(
-                  l10n.targetCourse,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      l10n.targetCourse,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                    if (_selectedSlot != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _selectedSlot!.slotType.color.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: _selectedSlot!.slotType.color.withOpacity(0.4)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_selectedSlot!.slotType.icon, size: 12, color: _selectedSlot!.slotType.color),
+                            const SizedBox(width: 4),
+                            Text(
+                              _selectedSlot!.slotType.localizedName(context),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: _selectedSlot!.slotType.color,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                   decoration: BoxDecoration(
                     color: theme.inputDecorationTheme.fillColor,
                     borderRadius: BorderRadius.circular(12),
@@ -337,23 +360,49 @@ class _QuickAddTaskSheetState extends State<QuickAddTaskSheet> {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       isExpanded: true,
-                      value: _selectedSlot?.courseName,
+                      value: _selectedSlot?.id,
                       hint: Text(l10n.manualCourseSelect),
                       icon: const Icon(Icons.arrow_drop_down),
-                      items: courseSlotsList.map((slot) {
+                      items: widget.availableSlots.map((slot) {
+                        final typeColor = slot.slotType.color;
                         return DropdownMenuItem<String>(
-                          value: slot.courseName,
-                          child: Text(
-                            slot.courseName,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          value: slot.id,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: typeColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(slot.slotType.icon, size: 15, color: typeColor),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '${slot.courseName} • ${slot.slotType.localizedName(context)}',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                    ),
+                                    Text(
+                                      '${l10n.dayName(slot.dayOfWeek)} • ${slot.formattedTimeRange}',
+                                      style: TextStyle(fontSize: 11, color: theme.hintColor),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }).toList(),
                       onChanged: (val) {
                         if (val != null) {
                           setState(() {
-                            _selectedSlot = coursesMap[val];
+                            _selectedSlot = slotsMap[val];
                             _isAutoDetected = false;
                             // Re-calculate deadline if preset is same class time
                             if (_selectedPreset == DeadlinePreset.nextWeekClassTime &&

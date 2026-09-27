@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:college_pulse/features/tasks/models/task_category.dart';
 import 'package:college_pulse/features/tasks/models/task_item.dart';
+import 'package:college_pulse/features/timetable/models/slot_type.dart';
 
 void main() {
   group('TaskItem Model Tests', () {
@@ -40,12 +41,13 @@ void main() {
       expect(overdueTask.isActive, isFalse);
     });
 
-    test('Serialization to and from JSON preserves all fields', () {
+    test('Serialization to and from JSON preserves all fields including slotType', () {
       final now = DateTime.now();
       final original = TaskItem(
         id: 't4',
         courseId: 'c_101',
         courseName: 'Algorithms',
+        slotType: SlotType.section,
         title: 'Sheet 3 Questions',
         description: 'Solve problems 1 through 5',
         category: TaskCategory.assignment,
@@ -61,6 +63,7 @@ void main() {
 
       expect(restored.id, original.id);
       expect(restored.courseName, original.courseName);
+      expect(restored.slotType, original.slotType);
       expect(restored.title, original.title);
       expect(restored.category, original.category);
       expect(restored.reminderOffsetsInMinutes, original.reminderOffsetsInMinutes);

@@ -1,11 +1,14 @@
+import 'package:flutter/material.dart';
 import 'package:college_pulse/core/constants/app_constants.dart';
 import 'package:college_pulse/core/utils/date_time_utils.dart';
+import 'package:college_pulse/features/timetable/models/slot_type.dart';
 import 'task_category.dart';
 
 class TaskItem {
   final String id;
   final String? courseId;
   final String? courseName;
+  final SlotType? slotType; // lecture, section, or lab
   final String title;
   final String? description;
   final TaskCategory category;
@@ -19,6 +22,7 @@ class TaskItem {
     required this.id,
     this.courseId,
     this.courseName,
+    this.slotType,
     required this.title,
     this.description,
     required this.category,
@@ -58,10 +62,19 @@ class TaskItem {
     return DateTimeUtils.formatSmartDate(dueDate, isArabic: isArabic);
   }
 
+  String? fullCourseLabel(BuildContext context) {
+    if (courseName == null || courseName!.isEmpty) return null;
+    if (slotType != null) {
+      return '$courseName • ${slotType!.localizedName(context)}';
+    }
+    return courseName;
+  }
+
   TaskItem copyWith({
     String? id,
     String? courseId,
     String? courseName,
+    SlotType? slotType,
     String? title,
     String? description,
     TaskCategory? category,
@@ -75,6 +88,7 @@ class TaskItem {
       id: id ?? this.id,
       courseId: courseId ?? this.courseId,
       courseName: courseName ?? this.courseName,
+      slotType: slotType ?? this.slotType,
       title: title ?? this.title,
       description: description ?? this.description,
       category: category ?? this.category,
@@ -92,6 +106,7 @@ class TaskItem {
       'id': id,
       'courseId': courseId,
       'courseName': courseName,
+      'slotType': slotType?.name,
       'title': title,
       'description': description,
       'category': category.name,
@@ -104,10 +119,22 @@ class TaskItem {
   }
 
   factory TaskItem.fromJson(Map<String, dynamic> json) {
+    SlotType? parsedSlotType;
+    if (json['slotType'] != null) {
+      try {
+        parsedSlotType = SlotType.values.firstWhere(
+          (e) => e.name == json['slotType'],
+        );
+      } catch (_) {
+        parsedSlotType = null;
+      }
+    }
+
     return TaskItem(
       id: json['id'] as String,
       courseId: json['courseId'] as String?,
       courseName: json['courseName'] as String?,
+      slotType: parsedSlotType,
       title: json['title'] as String,
       description: json['description'] as String?,
       category: TaskCategory.values.firstWhere(
@@ -125,4 +152,3 @@ class TaskItem {
     );
   }
 }
-
