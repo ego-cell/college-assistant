@@ -6,8 +6,8 @@ import 'package:college_pulse/core/localization/app_localizations.dart';
 import 'package:college_pulse/core/utils/date_time_utils.dart';
 import 'package:college_pulse/features/timetable/models/course_slot.dart';
 import 'package:college_pulse/features/timetable/models/slot_type.dart';
-import '../models/task_category.dart';
-import '../models/task_item.dart';
+import 'package:college_pulse/features/tasks/models/task_category.dart';
+import 'package:college_pulse/features/tasks/models/task_item.dart';
 
 enum DeadlinePreset {
   nextWeekClassTime,
