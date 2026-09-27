@@ -28,6 +28,8 @@ class CourseSlot {
   TimeOfDay get startTime => DateTimeUtils.minutesToTimeOfDay(startTimeMinutes);
   TimeOfDay get endTime => DateTimeUtils.minutesToTimeOfDay(endTimeMinutes);
   Color get color => Color(colorHex);
+  String get formattedTimeRange =>
+      DateTimeUtils.formatTimeRange(startTimeMinutes, endTimeMinutes);
 
   /// Checks if this slot is currently taking place based on current DateTime
   bool isOngoingAt(DateTime now) {
