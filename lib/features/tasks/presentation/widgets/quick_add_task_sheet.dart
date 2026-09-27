@@ -70,6 +70,7 @@ class _QuickAddTaskSheetState extends State<QuickAddTaskSheet> {
     AppConstants.reminder24h,
     AppConstants.reminder2h,
   };
+  DateTime? _customReminderDateTime;
 
   @override
   void initState() {
@@ -175,6 +176,40 @@ class _QuickAddTaskSheetState extends State<QuickAddTaskSheet> {
     }
   }
 
+  Future<void> _pickCustomReminderDateTime() async {
+    final now = DateTime.now();
+    final initialDate = _customReminderDateTime ??
+        (_selectedDueDate.isAfter(now)
+            ? _selectedDueDate.subtract(const Duration(hours: 3))
+            : now.add(const Duration(hours: 1)));
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate.isAfter(now) ? initialDate : now,
+      firstDate: now,
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+
+    if (pickedDate != null && mounted) {
+      final pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(initialDate),
+      );
+
+      if (pickedTime != null) {
+        setState(() {
+          _customReminderDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
+    }
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
@@ -192,6 +227,7 @@ class _QuickAddTaskSheetState extends State<QuickAddTaskSheet> {
       createdAt: DateTime.now(),
       dueDate: _selectedDueDate,
       reminderOffsetsInMinutes: _selectedReminderOffsets.toList(),
+      customReminderDateTime: _customReminderDateTime,
     );
 
     widget.onTaskCreated(task);
@@ -628,8 +664,73 @@ class _QuickAddTaskSheetState extends State<QuickAddTaskSheet> {
                       });
                     },
                   ),
+
+                  // Custom Specific Alert Time Picker Button
+                  ActionChip(
+                    avatar: Icon(
+                      Icons.more_time_rounded,
+                      size: 16,
+                      color: _customReminderDateTime != null ? AppColors.primary : null,
+                    ),
+                    label: Text(l10n.customReminderLabel),
+                    backgroundColor: _customReminderDateTime != null
+                        ? AppColors.primary.withOpacity(0.12)
+                        : null,
+                    side: _customReminderDateTime != null
+                        ? const BorderSide(color: AppColors.primary, width: 1.5)
+                        : null,
+                    onPressed: _pickCustomReminderDateTime,
+                  ),
                 ],
               ),
+
+              // Custom Reminder Selected Display Badge
+              if (_customReminderDateTime != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.35)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.alarm_on_rounded, size: 20, color: AppColors.primary),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.customReminderSet,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '${DateTimeUtils.formatSmartDate(_customReminderDateTime!, isArabic: isArabic)} • ${TimeOfDay.fromDateTime(_customReminderDateTime!).format(context)}',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_calendar_rounded, size: 18, color: AppColors.primary),
+                        tooltip: l10n.pickReminderDateTime,
+                        onPressed: _pickCustomReminderDateTime,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 18, color: Colors.grey),
+                        tooltip: l10n.cancel,
+                        onPressed: () => setState(() => _customReminderDateTime = null),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Save Button

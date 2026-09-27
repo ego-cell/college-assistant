@@ -150,6 +150,41 @@ class NotificationService {
         }
       }
     }
+
+    // Schedule Custom Specific Date/Time Reminder if provided
+    if (task.customReminderDateTime != null && task.customReminderDateTime!.isAfter(now)) {
+      final notifId = _generateNotificationId(task.id, 999999);
+      final title = '⏰ تذكير مخصص: ${task.title}';
+      final body = 'حان وقت التنبيه الذي حددته لمهمتك (${task.title})!';
+
+      try {
+        await _notificationsPlugin.zonedSchedule(
+          notifId,
+          title,
+          body,
+          tz.TZDateTime.from(task.customReminderDateTime!, tz.local),
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              AppConstants.notificationChannelId,
+              AppConstants.notificationChannelName,
+              channelDescription: AppConstants.notificationChannelDescription,
+              importance: sound == 'silent' ? Importance.low : Importance.max,
+              priority: sound == 'silent' ? Priority.low : Priority.high,
+              playSound: playSound,
+              enableVibration: true,
+              showWhen: true,
+              styleInformation: const BigTextStyleInformation(''),
+            ),
+          ),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          payload: task.id,
+        );
+      } catch (e) {
+        debugPrint('Failed to schedule custom alarm: $e');
+      }
+    }
   }
 
   /// Cancels all scheduled notifications for a task
@@ -160,6 +195,7 @@ class NotificationService {
         AppConstants.reminder48h,
         AppConstants.reminder24h,
         AppConstants.reminder2h,
+        999999, // Custom specific date/time reminder
       ];
       for (final offset in offsets) {
         await _notificationsPlugin.cancel(_generateNotificationId(taskId, offset));

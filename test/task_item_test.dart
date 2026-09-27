@@ -41,8 +41,9 @@ void main() {
       expect(overdueTask.isActive, isFalse);
     });
 
-    test('Serialization to and from JSON preserves all fields including slotType', () {
+    test('Serialization to and from JSON preserves all fields including slotType and customReminderDateTime', () {
       final now = DateTime.now();
+      final customReminder = now.add(const Duration(days: 1, hours: 4));
       final original = TaskItem(
         id: 't4',
         courseId: 'c_101',
@@ -54,6 +55,7 @@ void main() {
         createdAt: now,
         dueDate: now.add(const Duration(days: 2)),
         reminderOffsetsInMinutes: [1440, 120],
+        customReminderDateTime: customReminder,
         isCompleted: false,
         isArchived: false,
       );
@@ -67,6 +69,7 @@ void main() {
       expect(restored.title, original.title);
       expect(restored.category, original.category);
       expect(restored.reminderOffsetsInMinutes, original.reminderOffsetsInMinutes);
+      expect(restored.customReminderDateTime, original.customReminderDateTime);
     });
   });
 }

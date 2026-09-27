@@ -15,6 +15,7 @@ class TaskItem {
   final DateTime createdAt;
   final DateTime dueDate;
   final List<int> reminderOffsetsInMinutes; // e.g., [2880, 1440, 120]
+  final DateTime? customReminderDateTime; // Specific custom alarm date & time
   final bool isCompleted;
   final bool isArchived;
 
@@ -32,6 +33,7 @@ class TaskItem {
       AppConstants.reminder24h,
       AppConstants.reminder2h,
     ],
+    this.customReminderDateTime,
     this.isCompleted = false,
     this.isArchived = false,
   });
@@ -81,6 +83,7 @@ class TaskItem {
     DateTime? createdAt,
     DateTime? dueDate,
     List<int>? reminderOffsetsInMinutes,
+    DateTime? customReminderDateTime,
     bool? isCompleted,
     bool? isArchived,
   }) {
@@ -96,6 +99,8 @@ class TaskItem {
       dueDate: dueDate ?? this.dueDate,
       reminderOffsetsInMinutes:
           reminderOffsetsInMinutes ?? this.reminderOffsetsInMinutes,
+      customReminderDateTime:
+          customReminderDateTime ?? this.customReminderDateTime,
       isCompleted: isCompleted ?? this.isCompleted,
       isArchived: isArchived ?? this.isArchived,
     );
@@ -113,6 +118,7 @@ class TaskItem {
       'createdAt': createdAt.toIso8601String(),
       'dueDate': dueDate.toIso8601String(),
       'reminderOffsetsInMinutes': reminderOffsetsInMinutes,
+      'customReminderDateTime': customReminderDateTime?.toIso8601String(),
       'isCompleted': isCompleted,
       'isArchived': isArchived,
     };
@@ -127,6 +133,16 @@ class TaskItem {
         );
       } catch (_) {
         parsedSlotType = null;
+      }
+    }
+
+    DateTime? parsedCustomReminder;
+    if (json['customReminderDateTime'] != null) {
+      try {
+        parsedCustomReminder =
+            DateTime.parse(json['customReminderDateTime'] as String);
+      } catch (_) {
+        parsedCustomReminder = null;
       }
     }
 
@@ -147,6 +163,7 @@ class TaskItem {
               ?.map((e) => e as int)
               .toList() ??
           [AppConstants.reminder24h, AppConstants.reminder2h],
+      customReminderDateTime: parsedCustomReminder,
       isCompleted: json['isCompleted'] as bool? ?? false,
       isArchived: json['isArchived'] as bool? ?? false,
     );

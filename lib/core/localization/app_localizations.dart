@@ -108,6 +108,9 @@ class AppLocalizations {
   String get reminder24hLabel => isArabic ? '24 ساعة قبل' : '24h before';
   String get reminder2hLabel => isArabic ? 'ساعتين قبل' : '2 hours before';
   String get reminderMorningLabel => isArabic ? 'صباح يوم التسليم' : 'Morning of deadline';
+  String get customReminderLabel => isArabic ? 'تحديد موعد تنبيه مخصص' : 'Set Custom Alert Time';
+  String get customReminderSet => isArabic ? 'موعد التنبيه المخصص:' : 'Custom Alert Set:';
+  String get pickReminderDateTime => isArabic ? 'اختر تاريخ ووقت التنبيه' : 'Choose alert date & time';
   String get saveTask => isArabic ? 'حفظ المهمة' : 'Save Task';
   String get taskSavedSuccess => isArabic ? 'تم حفظ المهمة وجدولة التنبيه بنجاح' : 'Task saved & reminder scheduled!';
   String get fillRequiredFields => isArabic ? 'يرجى كتابة عنوان المطلوب' : 'Please enter task title';
